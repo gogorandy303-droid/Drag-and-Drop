@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grammar Drop - Don't / Doesn't Puzzle</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Inter',system-ui,sans-serif}
+h1,h2,h3{font-family:'Nunito',sans-serif}
+.drop-zone.drag-over{border-color:#6366f1!important;background:#eef2ff!important;transform:scale(1.02);box-shadow:0 0 0 3px rgba(99,102,241,0.15)}
+.drop-zone.filled-correct{border:2px solid #22c55e!important;background:#dcfce7!important;color:#15803d!important;font-weight:700!important;border-bottom-style:solid!important}
+.drop-zone.filled-wrong{border-color:#ef4444!important;background:#fee2e2!important;animation:shake 0.4s ease}
+.pill.wrong{animation:shake 0.4s ease;border-color:#ef4444!important;background:#fee2e2!important}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes pop{0%{transform:scale(0.86);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes confetti{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(260px) rotate(720deg);opacity:0}}
+.pill{user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.question-card{transition:background 0.2s}
+@media(max-width:640px){.drop-zone{min-width:130px!important}}
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 via-sky-50 to-amber-50 flex flex-col">
+<header class="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200 shadow-sm">
+<div class="max-w-5xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between gap-2">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-md">G</div>
+<div class="leading-none">
+<h1 class="font-extrabold text-slate-800 text-[15px] sm:text-[17px]">Grammar Drop</h1>
+<p class="text-[11px] sm:text-xs text-slate-500 hidden sm:block">Don't / Doesn't • Drag & Drop Puzzle</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5 sm:gap-2">
+<div class="hidden sm:flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1.5 rounded-full text-sm font-bold">
+<span>🏆</span><span id="scoreDisplay">0</span>
+</div>
+<div class="flex items-center gap-1.5 bg-white border border-slate-200 px-2.5 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold text-slate-700">
+<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse hidden sm:block"></span><span id="progressText">0/10</span>
+</div>
+<div class="flex items-center gap-1 bg-amber-100 border border-amber-200 px-2.5 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold text-amber-700">
+<span>⏱</span><span id="timerDisplay">03:00</span>
+</div>
+<button id="hintBtn" class="hidden sm:inline-flex items-center gap-1 bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-full text-sm font-bold transition">💡 Hint</button>
+<button id="resetBtn" class="bg-white border border-slate-200 hover:bg-slate-50 w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 rounded-full flex items-center justify-center font-bold text-slate-700 transition text-sm">↺<span class="hidden sm:inline ml-1">Reset</span></button>
+</div>
+</div>
+<div class="h-1.5 bg-slate-100">
+<div id="progressBar" class="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500" style="width:0%"></div>
+</div>
+</header>
+
+<main class="flex-1 max-w-5xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-7">
+<div class="bg-white rounded-[18px] sm:rounded-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.08),0_2px_10px_rgba(0,0,0,0.06)] border border-slate-200 overflow-hidden">
+<div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-4 sm:px-8 py-4 flex items-center justify-between text-white relative overflow-hidden">
+<div class="absolute -right-10 -top-10 w-28 h-28 bg-white/10 rounded-full"></div>
+<div class="absolute -left-6 -bottom-6 w-16 h-16 bg-white/10 rounded-full"></div>
+<div class="relative">
+<h2 class="font-black text-[17px] sm:text-xl leading-tight">Present Simple — Fill in the blanks</h2>
+<p class="text-indigo-100 text-[11px] sm:text-sm opacity-95 mt-1">Drag the correct form <b class="text-white">don't / doesn't</b> into the dotted gap • Tap to select on mobile</p>
+</div>
+<div class="hidden lg:flex items-center gap-2 bg-white/15 backdrop-blur px-3 py-2 rounded-xl text-sm relative">
+<span class="opacity-80 text-xs">LEVEL</span><span class="font-black">Beginner A1</span>
+</div>
+</div>
+<div class="bg-amber-50 border-y border-amber-100 px-4 sm:px-8 py-2.5 flex flex-wrap items-center gap-2 text-[11px] sm:text-sm text-amber-800">
+<span class="bg-amber-500 text-white px-2 py-0.5 rounded-full font-black text-[10px] sm:text-xs tracking-wide">HOW TO PLAY</span>
+<span class="leading-tight">Drag <b>a) b) c)</b> chips into the dotted line. <span class="hidden sm:inline">Green = correct, Red = try again!</span></span>
+<span class="ml-auto hidden sm:inline-flex items-center gap-1.5 text-slate-500 text-xs"><span class="w-6 h-3 bg-slate-50 border-b-2 border-dotted border-slate-400 rounded-sm"></span> Drop zone</span>
+</div>
+<div id="questionsContainer" class="px-3 sm:px-8 py-2 sm:py-4 divide-y divide-slate-100"></div>
+<div class="bg-slate-50 border-t border-slate-200 px-4 sm:px-8 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-2 text-sm">
+<span id="solvedBadge" class="bg-white border border-slate-200 px-3 py-1 rounded-full font-bold text-slate-700 text-xs sm:text-sm">0 solved</span>
+<span id="attemptsBadge" class="text-slate-400 text-xs sm:text-sm hidden sm:inline">Attempts: 0</span>
+</div>
+<div class="flex gap-2 w-full sm:w-auto">
+<button id="checkBtn" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-full font-black shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2 text-sm sm:text-[15px]">Check Answers <span>✨</span></button>
+<button id="hintBtnMobile" class="sm:hidden bg-violet-600 text-white px-4 py-2.5 rounded-full font-black">💡</button>
+</div>
+</div>
+</div>
+<div class="sm:hidden mt-3 grid grid-cols-2 gap-2">
+<div class="bg-slate-900 text-white rounded-2xl px-4 py-3 flex items-center justify-between">
+<span class="text-[11px] opacity-60 font-bold tracking-wide">SCORE</span><span id="scoreDisplayMobile" class="font-black text-lg">0</span>
+</div>
+<div class="bg-white border border-slate-200 rounded-2xl px-4 py-3 flex items-center justify-between">
+<span class="text-[11px] text-slate-500 font-bold tracking-wide">TIME LEFT</span><span id="timerDisplayMobile" class="font-black text-lg text-amber-600">03:00</span>
+</div>
+</div>
+<div class="mt-4 bg-white/70 backdrop-blur border border-slate-200 rounded-2xl px-4 py-3 flex items-start gap-3">
+<div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black shrink-0 mt-0.5">i</div>
+<p class="text-xs sm:text-sm text-slate-600 leading-relaxed"><b class="text-slate-800">Grammar Tip:</b> Use <b>doesn't</b> with <i>he / she / it</i> (Sara, Ali, the cat) and <b>don't</b> with <i>I / you / we / they</i>. The verb after never gets an <b>-s</b>!</p>
+</div>
+</main>
+
+<div id="startScreen" class="fixed inset-0 z-40 bg-gradient-to-br from-indigo-600/90 via-violet-600/90 to-fuchsia-600/90 backdrop-blur-md flex items-center justify-center p-4">
+<div class="bg-white rounded-[24px] shadow-2xl max-w-lg w-full overflow-hidden" style="animation:pop 0.5s ease">
+<div class="bg-gradient-to-r from-indigo-600 to-violet-600 p-6 sm:p-8 text-white relative overflow-hidden">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full"></div>
+<div class="absolute -left-4 -bottom-6 w-20 h-20 bg-white/10 rounded-full"></div>
+<div class="relative">
+<div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur px-3 py-1 rounded-full text-[11px] font-black tracking-widest">✨ INTERACTIVE GRAMMAR WORKSHEET</div>
+<h1 class="text-3xl sm:text-4xl font-black mt-3 leading-none">Grammar Drop!</h1>
+<p class="text-indigo-100 mt-2 text-sm sm:text-[15px] leading-relaxed">Exactly like your paper worksheet — but drag & drop! Master <b class="text-white">don't</b> vs <b class="text-white">doesn't</b> in 10 fun sentences.</p>
+</div>
+</div>
+<div class="p-6 sm:p-8">
+<div class="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
+<div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 text-center">
+<div class="text-xl">🎯</div><div class="text-xs font-black text-indigo-700 mt-1">10 Questions</div><div class="text-[11px] text-slate-500">Fill the blanks</div>
+</div>
+<div class="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-center">
+<div class="text-xl">⏱️</div><div class="text-xs font-black text-amber-700 mt-1">3 Minutes</div><div class="text-[11px] text-slate-500">Beat the clock</div>
+</div>
+<div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-center">
+<div class="text-xl">🏆</div><div class="text-xs font-black text-emerald-700 mt-1">Earn Stars</div><div class="text-[11px] text-slate-500">Perfect score?</div>
+</div>
+</div>
+<div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex gap-3 items-start mb-6">
+<div class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 text-sm shadow-sm">💡</div>
+<div class="text-[13px] sm:text-sm text-slate-600 leading-relaxed"><b class="text-slate-800">How to play:</b> Drag a pill like <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-slate-200 rounded-full text-xs font-medium mx-1"><span class="text-[10px] text-slate-400 font-bold">c)</span> doesn't drink</span> into the dotted line. On phone, tap the pill then tap the blank.</div>
+</div>
+<button id="playBtn" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black text-lg py-4 rounded-full shadow-xl shadow-indigo-200 transition flex items-center justify-center gap-2 group">Play Now <span class="group-hover:translate-x-1 transition">→</span></button>
+<p class="text-center text-xs text-slate-400 mt-3">No login • Instant feedback • Sound on 🔊</p>
+</div>
+</div>
+</div>
+
+<div id="gameOverModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+<div class="bg-white rounded-[24px] shadow-2xl max-w-md w-full overflow-hidden" style="animation:pop 0.4s ease">
+<div class="bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-center text-white relative overflow-hidden">
+<div id="confettiContainer" class="absolute inset-0 overflow-hidden pointer-events-none"></div>
+<div id="starsContainer" class="text-3xl tracking-[6px] relative">★★★</div>
+<h2 id="gameOverTitle" class="text-2xl font-black mt-2 relative">Perfect!</h2>
+<p id="gameOverDesc" class="text-indigo-100 text-sm mt-1 relative">You completed all sentences!</p>
+</div>
+<div class="p-6">
+<div class="grid grid-cols-3 gap-3 mb-5">
+<div class="bg-slate-900 text-white rounded-2xl p-3 text-center">
+<div class="text-[11px] opacity-60 font-bold tracking-wide">SCORE</div><div id="finalScore" class="font-black text-xl">0</div>
+</div>
+<div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-center">
+<div class="text-[11px] text-amber-600 font-black tracking-wide">TIME</div><div id="finalTime" class="font-black text-xl text-amber-700">0s</div>
+</div>
+<div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-center">
+<div class="text-[11px] text-emerald-600 font-black tracking-wide">DONE</div><div id="finalAccuracy" class="font-black text-xl text-emerald-700">0/10</div>
+</div>
+</div>
+<div id="resultMessage" class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-sm text-indigo-800 text-center mb-4 leading-relaxed">🌟 Grammar master! You know when to use don't and doesn't perfectly.</div>
+<div class="flex gap-2">
+<button id="reviewBtn" class="flex-1 bg-white border border-slate-200 hover:bg-slate-50 font-bold py-3 rounded-full text-slate-700">Review</button>
+<button id="playAgainBtn" class="flex-[1.4] bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-full shadow-lg">Play Again ↺</button>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const questions=[
+{id:1,before:"Sara",after:"milk every morning.",options:["don't drink","doesn't drinks","doesn't drink"],correct:"doesn't drink"},
+{id:2,before:"They",after:"to school on Friday.",options:["doesn't go","don't go","don't goes"],correct:"don't go"},
+{id:3,before:"My father",after:"coffee.",options:["doesn't like","don't likes","doesn't likes"],correct:"doesn't like"},
+{id:4,before:"We",after:"TV after school.",options:["doesn't watch","don't watches","don't watch"],correct:"don't watch"},
+{id:5,before:"The cat",after:"in the garden.",options:["don't sleep","doesn't sleeps","doesn't sleep"],correct:"doesn't sleep"},
+{id:6,before:"I",after:"football every day.",options:["doesn't play","don't plays","don't play"],correct:"don't play"},
+{id:7,before:"Ali",after:"his homework at school.",options:["don't do","doesn't does","doesn't do"],correct:"doesn't do"},
+{id:8,before:"My friends",after:"pizza every day.",options:["doesn't eat","don't eat","don't eats"],correct:"don't eat"},
+{id:9,before:"The bird",after:"at night.",options:["don't sing","doesn't sings","doesn't sing"],correct:"doesn't sing"},
+{id:10,before:"Mona",after:"to bed late.",options:["don't go","doesn't goes","doesn't go"],correct:"doesn't go"}
+];
+let score=0,solvedCount=0,attempts=0,timeLeft=180,timerInterval=null;
+let activePill=null,draggedPill=null,ghost=null,startX=0,startY=0,hasMoved=false;
+let audioCtx=null;
+function playSound(type){
+try{
+if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+osc.connect(gain);gain.connect(audioCtx.destination);
+if(type==='correct'){
+osc.frequency.value=880;gain.gain.value=0.13;osc.start();gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.3);osc.stop(audioCtx.currentTime+0.3);
+setTimeout(()=>{const o2=audioCtx.createOscillator(),g2=audioCtx.createGain();o2.connect(g2);g2.connect(audioCtx.destination);o2.frequency.value=1108;g2.gain.value=0.13;o2.start();g2.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.32);o2.stop(audioCtx.currentTime+0.32)},120);
+}else if(type==='error'){
+osc.frequency.value=160;osc.type='sawtooth';gain.gain.value=0.09;osc.start();gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.25);osc.stop(audioCtx.currentTime+0.25);
+}else if(type==='pop'){
+osc.frequency.value=620;gain.gain.value=0.07;osc.start();gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.15);osc.stop(audioCtx.currentTime+0.15);
+}
+}catch(e){}
+}
+function updateUI(){
+document.getElementById('scoreDisplay').textContent=score;
+const m=document.getElementById('scoreDisplayMobile'); if(m) m.textContent=score;
+document.getElementById('progressText').textContent=solvedCount+"/10";
+document.getElementById('progressBar').style.width=(solvedCount/10*100)+"%";
+document.getElementById('solvedBadge').textContent=solvedCount+" solved";
+document.getElementById('attemptsBadge').textContent="Attempts: "+attempts;
+}
+function updateTimerDisplay(){
+const m=String(Math.floor(timeLeft/60)).padStart(2,'0'),s=String(timeLeft%60).padStart(2,'0');
+document.getElementById('timerDisplay').textContent=m+":"+s;
+const mm=document.getElementById('timerDisplayMobile'); if(mm) mm.textContent=m+":"+s;
+if(timeLeft<30){document.getElementById('timerDisplay').classList.add('text-red-600');}
+else{document.getElementById('timerDisplay').classList.remove('text-red-600');}
+}
+function renderQuestions(){
+const c=document.getElementById('questionsContainer');
+c.innerHTML='';
+questions.forEach(q=>{
+const card=document.createElement('div');
+card.className='question-card py-3 sm:py-3.5 px-1 sm:px-0';
+card.innerHTML=`
+<div class="flex flex-wrap items-baseline gap-1 sm:gap-1.5 text-[14px] sm:text-[15px] leading-7 text-slate-800">
+<span class="font-black text-indigo-600 w-6 sm:w-7 shrink-0">${q.id}.</span>
+<span class="font-medium">${q.before}</span>
+<span class="drop-zone mx-1 inline-flex items-center justify-center min-w-[148px] sm:min-w-[190px] h-[30px] sm:h-[32px] px-3 border-b-2 border-dotted border-slate-400 bg-slate-50/70 rounded-lg text-[13px] sm:text-[14px] font-semibold text-slate-700" data-q="${q.id}" data-correct="${q.correct}"></span>
+<span>${q.after}</span>
+</div>
+<div class="options-row flex flex-wrap gap-1.5 sm:gap-2 mt-2.5 ml-6 sm:ml-7">
+${q.options.map((opt,i)=>{
+const label=String.fromCharCode(97+i)+')';
+return `<button class="pill inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-1.5 bg-white border border-slate-200 rounded-full text-[13px] sm:text-[14px] font-medium text-slate-700 hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-sm" data-q="${q.id}" data-value="${opt}" draggable="true"><span class="text-[11px] font-bold text-slate-400">${label}</span> ${opt}</button>`;
+}).join('')}
+</div>`;
+c.appendChild(card);
+});
+attachPillListeners();
+attachZoneListeners();
+}
+function attachPillListeners(){
+document.querySelectorAll('.pill').forEach(pill=>{
+pill.addEventListener('pointerdown',e=>{
+if(pill.classList.contains('used-correct')||pill.style.pointerEvents==='none') return;
+startX=e.clientX; startY=e.clientY; hasMoved=false; draggedPill=pill;
+pill.setPointerCapture(e.pointerId);
+});
+pill.addEventListener('pointermove',e=>{
+if(!draggedPill) return;
+const dx=e.clientX-startX, dy=e.clientY-startY;
+if(!hasMoved && Math.hypot(dx,dy)>7){
+hasMoved=true;
+ghost=draggedPill.cloneNode(true);
+ghost.style.position='fixed';
+ghost.style.left=(e.clientX-draggedPill.offsetWidth/2)+'px';
+ghost.style.top=(e.clientY-18)+'px';
+ghost.style.pointerEvents='none';
+ghost.style.opacity='0.96';
+ghost.style.zIndex='9999';
+ghost.style.transform='rotate(2deg) scale(1.07)';
+ghost.style.boxShadow='0 14px 28px rgba(0,0,0,0.18)';
+ghost.style.borderColor='#6366f1';
+document.body.appendChild(ghost);
+draggedPill.style.opacity='0.35';
+if(activePill){activePill.classList.remove('selected','bg-indigo-50','border-indigo-400','ring-2','ring-indigo-200');activePill=null;}
+}
+if(hasMoved && ghost){
+ghost.style.left=(e.clientX-ghost.offsetWidth/2)+'px';
+ghost.style.top=(e.clientY-18)+'px';
+const el=document.elementFromPoint(e.clientX,e.clientY);
+document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('drag-over'));
+const dz=el&&el.closest?el.closest('.drop-zone'):null;
+if(dz && dz.dataset.q===draggedPill.dataset.q && !dz.classList.contains('filled-correct')){
+dz.classList.add('drag-over');
+}
+}
+});
+const endDrag=(e)=>{
+if(!draggedPill) return;
+const wasDrag=hasMoved;
+document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('drag-over'));
+if(wasDrag){
+const el=document.elementFromPoint(e.clientX,e.clientY);
+const dz=el&&el.closest?el.closest('.drop-zone'):null;
+if(dz) attemptDrop(draggedPill,dz);
+if(ghost) ghost.remove();
+ghost=null;
+draggedPill.style.opacity='1';
+draggedPill=null; hasMoved=false;
+e.preventDefault(); e.stopPropagation();
+}else{
+const p=draggedPill;
+draggedPill=null; hasMoved=false;
+handlePillClick(p);
+}
+};
+pill.addEventListener('pointerup',endDrag);
+pill.addEventListener('pointercancel',()=>{
+if(ghost) ghost.remove(); ghost=null;
+if(draggedPill) draggedPill.style.opacity='1';
+draggedPill=null; hasMoved=false;
+document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('drag-over'));
+});
+pill.addEventListener('dragstart',e=>{
+e.dataTransfer.setData('text/plain',pill.dataset.value);
+e.dataTransfer.effectAllowed='move';
+draggedPill=pill;
+setTimeout(()=>pill.style.opacity='0.4',0);
+});
+pill.addEventListener('dragend',()=>{
+pill.style.opacity='1';
+document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('drag-over'));
+});
+});
+}
+function handlePillClick(pill){
+if(pill.classList.contains('used-correct')||pill.style.pointerEvents==='none') return;
+if(activePill===pill){
+pill.classList.remove('bg-indigo-50','border-indigo-400','ring-2','ring-indigo-200');
+activePill=null; playSound('pop');
+}else{
+if(activePill) activePill.classList.remove('bg-indigo-50','border-indigo-400','ring-2','ring-indigo-200');
+activePill=pill;
+pill.classList.add('bg-indigo-50','border-indigo-400','ring-2','ring-indigo-200');
+playSound('pop');
+}
+}
+function attachZoneListeners(){
+document.querySelectorAll('.drop-zone').forEach(zone=>{
+zone.addEventListener('click',()=>{
+if(activePill){
+attemptDrop(activePill,zone);
+activePill.classList.remove('bg-indigo-50','border-indigo-400','ring-2','ring-indigo-200');
+activePill=null;
+}
+});
+zone.addEventListener('dragover',e=>{e.preventDefault(); if(!zone.classList.contains('filled-correct')) zone.classList.add('drag-over');});
+zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
+zone.addEventListener('drop',e=>{
+e.preventDefault(); zone.classList.remove('drag-over');
+if(draggedPill && draggedPill.dataset.q===zone.dataset.q){
+attemptDrop(draggedPill,zone);
+}else{
+const val=e.dataTransfer.getData('text/plain');
+const cand=document.querySelector(`.pill[data-q="${zone.dataset.q}"][data-value="${val}"]`);
+if(cand) attemptDrop(cand,zone);
+}
+});
+});
+}
+function attemptDrop(pill,zone){
+if(zone.classList.contains('filled-correct')) return;
+if(pill.dataset.q!==zone.dataset.q){
+pill.classList.add('wrong'); playSound('error');
+setTimeout(()=>pill.classList.remove('wrong'),450);
+showToast("That pill belongs to another sentence ✋");
+return;
+}
+const val=pill.dataset.value;
+const q=questions.find(x=>x.id==zone.dataset.q);
+const isCorrect=val===q.correct;
+if(isCorrect){
+zone.textContent=val;
+zone.classList.add('filled-correct');
+zone.classList.remove('drag-over');
+pill.classList.add('used-correct');
+pill.style.opacity='0.45';
+pill.style.pointerEvents='none';
+document.querySelectorAll(`.pill[data-q="${q.id}"]`).forEach(p=>{
+if(p!==pill){p.style.opacity='0.32'; p.style.pointerEvents='none';}
+});
+score+=100; solvedCount++; updateUI(); playSound('correct'); launchMiniConfetti(zone);
+if(solvedCount===questions.length) setTimeout(()=>showGameOver(true),650);
+}else{
+zone.classList.add('filled-wrong');
+pill.classList.add('wrong');
+playSound('error');
+attempts++; score=Math.max(0,score-10); updateUI();
+zone.textContent=val;
+setTimeout(()=>{
+if(!zone.classList.contains('filled-correct')){zone.textContent=''; zone.classList.remove('filled-wrong');}
+pill.classList.remove('wrong');
+},850);
+}
+}
+function launchMiniConfetti(zone){
+const rect=zone.getBoundingClientRect();
+for(let i=0;i<9;i++){
+const c=document.createElement('div');
+c.style.position='fixed';
+c.style.left=(rect.left+rect.width/2+(Math.random()-0.5)*50)+'px';
+c.style.top=rect.top+'px';
+c.style.width='7px'; c.style.height='7px';
+c.style.borderRadius='50%';
+c.style.background=['#6366f1','#22c55e','#f59e0b','#ec4899','#06b6d4'][Math.floor(Math.random()*5)];
+c.style.pointerEvents='none';
+c.style.zIndex='9999';
+c.style.animation='confetti 0.75s ease-out forwards';
+document.body.appendChild(c);
+setTimeout(()=>c.remove(),800);
+}
+}
+function launchConfetti(){
+const cont=document.getElementById('confettiContainer');
+if(!cont) return; cont.innerHTML='';
+for(let i=0;i<26;i++){
+const d=document.createElement('div');
+d.style.position='absolute';
+d.style.left=Math.random()*100+'%';
+d.style.top='-8px';
+d.style.width='8px'; d.style.height='8px';
+d.style.background=['#fff','#fef08a','#fbcfe8','#ddd6fe','#bbf7d0'][Math.floor(Math.random()*5)];
+d.style.borderRadius='2px';
+d.style.transform=`rotate(${Math.random()*360}deg)`;
+d.style.animation=`confetti ${0.9+Math.random()*0.7}s ease-out forwards`;
+d.style.animationDelay=(Math.random()*0.35)+'s';
+cont.appendChild(d);
+}
+}
+function showToast(msg){
+let t=document.getElementById('toast');
+if(!t){
+t=document.createElement('div');
+t.id='toast';
+t.className='fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-full text-sm font-bold shadow-xl z-50';
+document.body.appendChild(t);
+}
+t.textContent=msg; t.style.opacity='1'; t.style.transform='translate(-50%,0)'; t.style.transition='all 0.3s';
+clearTimeout(t._timer);
+t._timer=setTimeout(()=>{t.style.opacity='0'; t.style.transform='translate(-50%,12px)';},2600);
+}
+function showHint(){
+const unsolved=questions.find(q=>!document.querySelector(`.drop-zone[data-q="${q.id}"]`).classList.contains('filled-correct'));
+if(!unsolved) return;
+const pill=document.querySelector(`.pill[data-q="${unsolved.id}"][data-value="${unsolved.correct}"]`);
+if(pill){
+pill.scrollIntoView({behavior:'smooth',block:'center'});
+pill.classList.add('ring-4','ring-amber-300');
+pill.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:600,iterations:2});
+score=Math.max(0,score-5); updateUI();
+setTimeout(()=>pill.classList.remove('ring-4','ring-amber-300'),2200);
+playSound('pop');
+showToast(`Hint: #${unsolved.id} needs "${unsolved.correct}" 💡 -5 pts`);
+}
+}
+function startTimer(){
+clearInterval(timerInterval);
+timerInterval=setInterval(()=>{
+timeLeft--; updateTimerDisplay();
+if(timeLeft<=0){clearInterval(timerInterval); showGameOver(false);}
+},1000);
+}
+function startGame(){
+score=0; solvedCount=0; attempts=0; timeLeft=180;
+updateUI(); updateTimerDisplay();
+document.querySelectorAll('.drop-zone').forEach(z=>{
+z.textContent=''; z.className='drop-zone mx-1 inline-flex items-center justify-center min-w-[148px] sm:min-w-[190px] h-[30px] sm:h-[32px] px-3 border-b-2 border-dotted border-slate-400 bg-slate-50/70 rounded-lg text-[13px] sm:text-[14px] font-semibold text-slate-700';
+});
+document.querySelectorAll('.pill').forEach(p=>{
+p.className='pill inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 bg-white border border-slate-200 rounded-full text-[13px] sm:text-[14px] font-medium text-slate-700 hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-sm';
+p.style.opacity='1'; p.style.pointerEvents='auto';
+});
+activePill=null; draggedPill=null; if(ghost){ghost.remove();ghost=null;}
+clearInterval(timerInterval); startTimer();
+const gm=document.getElementById('gameOverModal'); gm.classList.add('hidden'); gm.classList.remove('flex');
+document.getElementById('startScreen').style.display='none';
+playSound('pop');
+}
+function showGameOver(success){
+clearInterval(timerInterval);
+const modal=document.getElementById('gameOverModal');
+modal.classList.remove('hidden'); modal.classList.add('flex');
+const title=document.getElementById('gameOverTitle');
+const desc=document.getElementById('gameOverDesc');
+const stars=document.getElementById('starsContainer');
+const scoreEl=document.getElementById('finalScore');
+const timeEl=document.getElementById('finalTime');
+const accEl=document.getElementById('finalAccuracy');
+const msg=document.getElementById('resultMessage');
+let starCount=1;
+if(solvedCount===10 && attempts<=2) starCount=3;
+else if(solvedCount>=8) starCount=2;
+else if(solvedCount>=5) starCount=1;
+if(!success && solvedCount<10){
+title.textContent=timeLeft<=0?"Time's Up! ⏰":"Keep Practicing! 💪";
+desc.textContent=`You solved ${solvedCount}/10. You can do it!`;
+starCount=solvedCount>=7?2:1;
+msg.textContent="Tip: 'He/She/It' → doesn't + verb. 'I/We/They' → don't + verb.";
+msg.className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800 text-center mb-4";
+}else if(solvedCount===10){
+if(starCount===3){title.textContent="Perfect Grammar Star! 🌟"; desc.textContent="Flawless! You mastered don't / doesn't!"; msg.textContent="🌟 Incredible! Zero or very few mistakes — you're a grammar master!"; msg.className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800 text-center mb-4";}
+else if(starCount===2){title.textContent="Great Job! 🎉"; desc.textContent="You nailed most sentences!"; msg.textContent="👏 Strong work! Review the ones you missed and aim for 3 stars!"; msg.className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-sm text-indigo-800 text-center mb-4";}
+else{title.textContent="Well Done! 👍"; desc.textContent="All 10 completed — keep polishing!"; msg.textContent="💪 You finished! Try again to get fewer errors and earn 3 stars."; msg.className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 text-center mb-4";}
+}else{
+title.textContent="Good Effort! 👍"; desc.textContent=`You solved ${solvedCount}/10`;
+msg.textContent="You're improving! Focus on he/she/it vs I/we/they.";
+}
+stars.innerHTML='★'.repeat(starCount)+'<span style="opacity:0.2">'+'★'.repeat(3-starCount)+'</span>';
+scoreEl.textContent=score;
+timeEl.textContent=(180-timeLeft)+'s';
+accEl.textContent=solvedCount+'/10';
+if(success && starCount===3) launchConfetti();
+}
+document.addEventListener('DOMContentLoaded',()=>{
+renderQuestions(); updateUI(); updateTimerDisplay();
+document.getElementById('playBtn').addEventListener('click',startGame);
+document.getElementById('resetBtn').addEventListener('click',()=>{
+if(document.getElementById('startScreen').style.display!=='none') return;
+startGame(); showToast("Game reset! 🔄");
+});
+document.getElementById('hintBtn').addEventListener('click',showHint);
+document.getElementById('hintBtnMobile').addEventListener('click',showHint);
+document.getElementById('checkBtn').addEventListener('click',()=>{
+if(solvedCount===questions.length) showGameOver(true);
+else{
+document.querySelectorAll('.drop-zone:not(.filled-correct)').forEach(z=>{
+z.animate([{transform:'translateX(0)'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],{duration:350});
+});
+showToast(`You still have ${10 - solvedCount} blank(s) to fill! 💪`);
+playSound('error');
+}
+});
+document.getElementById('playAgainBtn').addEventListener('click',startGame);
+document.getElementById('reviewBtn').addEventListener('click',()=>{
+const m=document.getElementById('gameOverModal'); m.classList.add('hidden'); m.classList.remove('flex');
+showToast("Review your answers below 👇");
+});
+});
+</script>
+</body>
+</html>
